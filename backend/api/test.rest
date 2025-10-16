@@ -1,0 +1,42 @@
+# On va créer une API pour créer une nouvelle transaction et pour récupérer la liste des transactions.
+
+POST http://127.0.0.1:8000/api/transactions/
+Content-Type: application/json 
+
+{
+    "text": "Salaire Octobre",
+    "amount": 500000
+}
+
+#je precise ici que le corps de la requete est en JSON
+# on dois laisser une ligne vide entre les en-tetes et le corps de la requete
+# on ne dois rien mettre entre le post et le content-type
+# là on viens de faire le create et le read du CRUD il reste le update et le delete
+# pour le update et le delete on va aller dans views.py pour creer une class TransactionRetrieveUpdateDestroyView """
+###
+GET http://127.0.0.1:8000/api/transactions/
+
+###
+DELETE http://127.0.0.1:8000/api/transactions/35a1416c-867d-45fc-af1e-4f5e1679cc3e/
+
+###
+PUT http://127.0.0.1:8000/api/transactions/2eae1f0a-a0c1-4e47-ba96-8ca8e3492b6b/
+Content-Type: application/json
+
+{
+    "text": "Salaire Octobre",
+    "amount": 600000
+    
+}
+
+ # PUT permet de mettre a jour completement tout une transaction de A a Z
+ # quand on utilise le put ou patch on est obligé d'utiliser le JSON
+###
+PATCH http://127.0.0.1:8000/api/transactions/94a74f34-6edd-48ee-855f-cbfe91b3b96b/
+Content-Type: application/json
+
+{
+    "amount": 500000
+}
+
+# PATCH permet de mettre a jour partiellement une transaction, genre un champ seul
