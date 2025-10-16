@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import api from "./api";
 import { toast } from "react-hot-toast";
-import { ArrowDownCircle, ArrowUpCircle, Wallet, Activity, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Wallet, Activity, TrendingUp, TrendingDown, Trash } from "lucide-react";
 
 // on va définir le type Transaction
 type Transaction = {
@@ -27,6 +27,18 @@ export default function Home() {
     } catch (error) {
       console.error("Erreur chargements transactions", error);
       toast.error("Erreur chargements transactions")
+    }
+  }
+
+  // on va charger toutes les transactions
+  const deleteTransaction = async (id: string) => {
+    // on appelle la clause try et catch pour gérer les erreurs quand il y en a et nous le retourner
+    try {
+      await api.delete(`transactions/${id}/`)
+      toast.success("Transaction supprimée")
+    } catch (error) {
+      console.error("Erreur suppression transaction", error);
+      toast.error("Erreur suppression transaction")
     }
   }
 
@@ -131,7 +143,17 @@ export default function Home() {
             )}
             {t.amount > 0 ? `+${t.amount}` : t.amount} FCFA
         </td>
-          <td>Blue</td>
+          <td>
+            {formatDate(t.created_at)}
+          </td>
+          <td>
+            <button
+            onClick={() => deleteTransaction(t.id)}
+            className="btn btn-sm btn-error btn-soft" 
+            title="Supprimer">
+              <Trash className="w-4 h-4"/>
+            </button>
+          </td>
         </tr>
       ))}
     </tbody>
