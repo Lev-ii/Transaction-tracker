@@ -3,7 +3,8 @@
 import { use, useEffect, useState } from "react";
 import api from "./api";
 import { toast } from "react-hot-toast";
-import { ArrowDownCircle, ArrowUpCircle, Wallet, Activity, TrendingUp, TrendingDown, Trash } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Wallet, Activity, TrendingUp, TrendingDown, Trash, PlusCircle } from "lucide-react";
+import { get } from "http";
 
 // on va définir le type Transaction
 type Transaction = {
@@ -16,8 +17,11 @@ type Transaction = {
 export default function Home() {
 // on va créer une fonction qui permettra de reccupérer les transactions mettre à jour la liste des transactions
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [text, setText] = useState<string>("");
+  const [amount, setAmount] = useState<number | "">("");
+  const [loading , setloading] = useState(false);
 
-  // on va charger toutes les transactions
+  // fonction pour charger toutes les transactions
   const getTransactions = async () => {
     // on appelle la clause try et catch pour gérer les erreurs quand il y en a et nous le retourner
     try {
@@ -30,15 +34,47 @@ export default function Home() {
     }
   }
 
-  // on va charger toutes les transactions
+  // fonction pour supprimer une transaction
   const deleteTransaction = async (id: string) => {
     // on appelle la clause try et catch pour gérer les erreurs quand il y en a et nous le retourner
     try {
       await api.delete(`transactions/${id}/`)
+      getTransactions();
       toast.success("Transaction supprimée")
     } catch (error) {
       console.error("Erreur suppression transaction", error);
       toast.error("Erreur suppression transaction")
+    }
+  }
+
+  // 
+  const addTransaction = async () => {
+    if(!text || amount == "" || isNaN(Number(amount))) {
+      toast.error("Veuillez entrer un texte et un montant valide")
+      return;
+    }
+    setloading(true)
+    // on appelle la clause try et catch pour gérer les erreurs quand il y en a et nous le retourner
+    try {
+       const res = await api.post<Transaction>(`transactions/`, { 
+        text, 
+        amount : Number(amount)
+      })
+      getTransactions();
+      // on doit fermer les pop up
+      const modal = document.getElementById('my_modal_3') as HTMLDialogElement
+      if(modal) {
+        modal.close()
+      }
+
+      toast.success("Transaction ajoutée avec succès")
+      setText("")
+      setAmount("")
+    } catch (error) {
+      console.error("Erreur ajout transaction", error);
+      toast.error("Erreur ajout transaction")
+    }finally {
+      setloading(false)
     }
   }
 
@@ -66,7 +102,7 @@ export default function Home() {
 
   return (
       <div className="w-2/3 flex flex-col gap-4">
-        <div className="flex justify-between rounded-2xl border-2 border-warning/10 border-dashed bg-warning/5 p-5">
+        <div className="flex justify-between rounded-2xl border-2 border-warning/10 bg-warning/5 p-5">
           <div className="flex flex-col gap-1">          
             <div className="badge badge-soft">
                 <Wallet className="w-4 h4"/>
@@ -98,7 +134,7 @@ export default function Home() {
               </div>
             </div>  
         </div>
-        <div className="rounded-2xl border-2 border-warning/10 border-dashed bg-warning/5 p-5">
+        <div className="rounded-2xl border-2 border-warning/10 bg-warning/5 p-5">
           <div className="flex justify-between item-center mb-1">           
               <div className="badge badge-soft badge-warning gap-1">
                 <Activity className="w-4 h-4" />
@@ -117,48 +153,105 @@ export default function Home() {
 
         </div>
 
-        {/* <button></button> */}
-        <div className="rounded-2xl border-2 border-warning/10 border-dashed bg-warning/5">
-  <table className="table">
-    {/* head */}
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Description</th>
-        <th>Montant</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      {transactions.map((t, index) => (      
-        <tr
-          key={t.id}>
-          <th>{index +1}</th>
-          <td>{t.text}</td>
-          <td className="font semibold flex items-center gap-2">
-            {t.amount > 0 ? (
-              <TrendingUp className="text-success w-6 h-6" />
-            ) : (
-              <TrendingDown className="text-success w-6 h-6"/>
-            )}
-            {t.amount > 0 ? `+${t.amount}` : t.amount} FCFA
-        </td>
-          <td>
-            {formatDate(t.created_at)}
-          </td>
-          <td>
-            <button
-            onClick={() => deleteTransaction(t.id)}
-            className="btn btn-sm btn-error btn-soft" 
-            title="Supprimer">
-              <Trash className="w-4 h-4"/>
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+        {/* You can open the modal using document.getElementById('ID').showModal() method */}
+        <button className="btn btn-warning" onClick={()=>(document.getElementById('my_modal_3')as HTMLDialogElement).showModal()}>
+          <PlusCircle className="w-4 h-4"/>
+          Ajouter une transaction
+          </button>
+
+
+
+        <div className="overflow-x-auto rounded-2xl border-2 border-warning/10 bg-warning/5">
+          <table className="table">
+            {/* head */}
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Montant</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((t, index) => (      
+                <tr
+                  key={t.id}>
+                  <th>{index +1}</th>
+                  <td>{t.text}</td>
+                  <td className="font semibold flex items-center gap-2">
+                    {t.amount > 0 ? (
+                      <TrendingUp className="text-success w-6 h-6" />
+                    ) : (
+                      <TrendingDown className="text-error w-6 h-6"/>
+                    )}
+                    {t.amount > 0 ? `+${t.amount}` : t.amount} FCFA
+                </td>
+                  <td>
+                    {formatDate(t.created_at)}
+                  </td>
+                  <td>
+                    <button
+                    onClick={() => deleteTransaction(t.id)}
+                    className="btn btn-sm btn-error btn-soft" 
+                    title="Supprimer">
+                      <Trash className="w-4 h-4"/>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+                <dialog id="my_modal_3" className="modal backdrop-blur">
+          <div className="modal-box border-2 border-warning/10 ">
+            <form method="dialog">
+              {/* if there is a button in form, it will close the modal */}
+              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 className="font-bold text-lg">Ajouter une Transaction</h3>
+            <div className="flex flex-col gap-4 mt-4">
+
+              <div className="flex flex-col gap-2">
+                <label className="label">Texte</label>
+                <input 
+                  type="text"
+                  name="text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Entrez le texte..."
+                  className="input w-full"
+
+                  />
+              </div>
+
+                 <div className="flex flex-col gap-2">
+                <label className="label">Montant (négatif - dépense, positif - revenu)</label>
+                <input 
+                  type="number"
+                  name="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )}
+                  placeholder="Entrez le montant..."
+                  className="input w-full"
+
+                  />
+              </div> 
+              <button 
+              className="w-full btn btn-warning mt-4"
+              onClick={addTransaction}
+              disabled={loading}
+              >
+                <PlusCircle className="w-4 h-4"/>
+                Ajouter
+              </button>
+
+            </div>
+          </div>
+        </dialog>
+
     </div>
   );
 }
